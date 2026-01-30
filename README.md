@@ -4,6 +4,29 @@ A Python script to compare two coin collections from Excel files (uCoin and Numi
 
 **Supports Excel files in both English and Portuguese (PT-PT)** - column names are automatically detected regardless of language.
 
+## Table of Contents
+
+- [Features](#features)
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Exporting Your Collections](#exporting-your-collections)
+  - [Exporting from uCoin](#exporting-from-ucoin)
+  - [Exporting from Numista](#exporting-from-numista)
+- [Usage](#usage)
+- [Expected Excel File Structure](#expected-excel-file-structure)
+- [Matching Algorithm](#matching-algorithm)
+- [Special Features](#special-features)
+  - [Country Name Normalization](#country-name-normalization)
+  - [Catalog Reference Normalization](#catalog-reference-normalization)
+  - [Spanish Coins with "Var." Field](#spanish-coins-with-var-field)
+  - [Duplicate Grouping](#duplicate-grouping)
+- [Output Reports](#output-reports)
+- [Console Output](#console-output)
+- [Example Output](#example-output)
+- [Troubleshooting](#troubleshooting)
+- [License](#license)
+- [Contributing](#contributing)
+
 ## Features
 
 - **Intelligent Matching Algorithm**: Matches coins based on mandatory criteria (country, year, diameter) with a sophisticated scoring system
