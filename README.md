@@ -36,6 +36,7 @@ A Python script to compare two coin collections from Excel files (uCoin and Numi
 - **Dual Year Support**: Checks both "year" and "gregorian year" fields from Numista
 - **Value Normalization**: Converts decimal values to integers for proper comparison (0.05 → 5 cents)
 - **Diameter Tolerance**: Uses diameter as a scoring factor rather than strict requirement
+- **Clickable Links**: Generates clickable hyperlinks to Numista coin pages in all Excel reports
 - **Detailed Reports**: Generates Excel files with differences, unmatched coins, and analysis
 
 ## Requirements
@@ -89,6 +90,7 @@ Before using the comparison tool, you need to export your collections from both 
      - Diâmetro / Diameter
      - Referência / Reference
      - Quantidade / Quantity
+     - **Número N# (com link) / N# number (with link)** - Required for clickable links in reports
    - **Language**: Choose Portuguese or English
    - **Format**: Select "XLSX"
 5. **Download**: Click export and save the file as `numista.xlsx` in the same directory as the script
@@ -149,6 +151,7 @@ Required columns (English / Portuguese):
 - `Diameter` / `Diâmetro` - Diameter in mm
 - `Reference` / `Referência` - Catalog reference
 - `Quantity` / `Quantidade` - Quantity
+- `N# number (with link)` / `Número N# (com link)` - Numista ID for generating clickable links (e.g., "N# 12345")
 
 **Note**: The script normalizes column names during processing, so minor variations in spacing or capitalization are handled automatically.
 
@@ -216,6 +219,8 @@ Quantities are automatically summed for identical coins.
 
 ## Output Reports
 
+All Excel reports now include clickable hyperlinks to Numista coin pages for easy access to detailed coin information.
+
 ### 1. Differences Report (differences_*.xlsx / diferencas_*.xlsx)
 Lists coins that exist in both collections but have different quantities:
 - Country/Issuer
@@ -224,14 +229,18 @@ Lists coins that exist in both collections but have different quantities:
 - Catalog references from both sources
 - Quantities from both sources
 - Difference (positive = more in uCoin, negative = more in Numista)
+- **Link to Numista** - Clickable hyperlink to view the coin on Numista
 
 ### 2. Missing in Numista Report (missing_in_numista_*.xlsx / faltam_em_numista_*.xlsx)
 Lists coins with higher quantity in uCoin than Numista.
+- Includes clickable Numista links for quick verification
 
 ### 3. Unmatched Coins Report (unmatched_*.xlsx / nao_correspondidas_*.xlsx)
 Two sheets:
 - **Only_uCoin** / **Apenas_uCoin**: Coins only found in uCoin collection
-- **Only_Numista** / **Apenas_Numista**: Coins only found in Numista collection
+- **Only_Numista** / **Apenas_Numista**: Coins only found in Numista collection (includes clickable links)
+
+**Note about uCoin links**: Currently, direct links to uCoin coin pages are not included in the reports as uCoin doesn't provide a stable coin ID in their export format. Future versions may include alternative methods to track uCoin coins.
 
 ## Console Output
 

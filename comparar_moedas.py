@@ -7,6 +7,33 @@ import sys
 from datetime import datetime
 
 import pandas as pd
+from openpyxl import load_workbook
+from openpyxl.utils import get_column_letter
+
+
+def write_excel_with_hyperlinks(df, filename, link_column="link_numista"):
+    """Write DataFrame to Excel with clickable hyperlinks"""
+    # First write the dataframe normally
+    df.to_excel(filename, index=False)
+
+    # Then load the workbook and convert links to hyperlinks
+    wb = load_workbook(filename)
+    ws = wb.active
+
+    # Find the column index for the link column
+    headers = [cell.value for cell in ws[1]]
+    if link_column in headers:
+        link_col_idx = headers.index(link_column) + 1
+
+        # Convert URLs to hyperlinks (starting from row 2, skipping header)
+        for row in range(2, ws.max_row + 1):
+            cell = ws.cell(row=row, column=link_col_idx)
+            if cell.value and str(cell.value).startswith("http"):
+                url = str(cell.value)
+                cell.hyperlink = url
+                cell.style = "Hyperlink"
+
+    wb.save(filename)
 
 
 def carregar_excel(ficheiro):
@@ -457,6 +484,17 @@ def comparar_moedas(df1, df2, nome1, nome2):
         qtd2 = row2.get("quantidade", 0)
 
         if qtd1 != qtd2:
+            # Extract Numista number and construct link
+            numista_num = row2.get("número n# (com link)", "")
+            link_numista = ""
+            if pd.notna(numista_num) and str(numista_num).strip():
+                import re
+
+                # Extract only digits from the string
+                num_str = re.sub(r"\D", "", str(numista_num))
+                if num_str:
+                    link_numista = f"https://pt.numista.com/{num_str}"
+
             diferencas.append(
                 {
                     "país/emissor": row1.get("país", ""),
@@ -469,6 +507,7 @@ def comparar_moedas(df1, df2, nome1, nome2):
                     "diferença": (
                         int(qtd1 - qtd2) if pd.notna(qtd1) and pd.notna(qtd2) else 0
                     ),
+                    "link_numista": link_numista,
                 }
             )
         else:
@@ -483,7 +522,7 @@ def comparar_moedas(df1, df2, nome1, nome2):
 
         # Exportar para Excel
         nome_ficheiro = f"diferencas_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
-        df_dif.to_excel(nome_ficheiro, index=False)
+        write_excel_with_hyperlinks(df_dif, nome_ficheiro, "link_numista")
         print(f"\n💾 Diferenças guardadas em: {nome_ficheiro}")
     else:
         print(
@@ -550,6 +589,7 @@ def comparar_moedas(df1, df2, nome1, nome2):
                     "qtd_ucoin",
                     "qtd_numista",
                     "diferença",
+                    "link_numista",
                 ]
             ].to_string(index=False)
         )
@@ -573,7 +613,7 @@ def comparar_moedas(df1, df2, nome1, nome2):
             f"faltam_em_numista_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
         )
         df_faltam = pd.DataFrame(moedas_faltam_numista)
-        df_faltam.to_excel(nome_ficheiro_faltam, index=False)
+        write_excel_with_hyperlinks(df_faltam, nome_ficheiro_faltam, "link_numista")
         print(f"\n💾 Moedas com mais quantidade em uCoin: {nome_ficheiro_faltam}")
 
     # Exportar moedas não correspondidas
@@ -581,15 +621,53 @@ def comparar_moedas(df1, df2, nome1, nome2):
         nome_ficheiro2 = (
             f"nao_correspondidas_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
         )
-        with pd.ExcelWriter(nome_ficheiro2) as writer:
+
+        # Add link column to unmatched numista
+        if len(nao_match_numista) > 0:
+            import re
+
+            nao_match_numista_copy = nao_match_numista.copy()
+            nao_match_numista_copy["link_numista"] = nao_match_numista_copy.apply(
+                lambda row: (
+                    f"https://pt.numista.com/{re.sub(r'\D', '', str(row.get('número n# (com link)', '')))}"
+                    if pd.notna(row.get("número n# (com link)", ""))
+                    and re.sub(r"\D", "", str(row.get("número n# (com link)", "")))
+                    else ""
+                ),
+                axis=1,
+            )
+
+        with pd.ExcelWriter(nome_ficheiro2, engine="openpyxl") as writer:
             if len(nao_match_ucoin) > 0:
                 nao_match_ucoin[
                     ["país", "ano", "denominação", "número", "quantidade"]
                 ].to_excel(writer, sheet_name="Apenas_uCoin", index=False)
             if len(nao_match_numista) > 0:
-                nao_match_numista[
-                    ["emissor", "ano", "título", "referência", "quantidade"]
+                nao_match_numista_copy[
+                    [
+                        "emissor",
+                        "ano",
+                        "título",
+                        "referência",
+                        "quantidade",
+                        "link_numista",
+                    ]
                 ].to_excel(writer, sheet_name="Apenas_Numista", index=False)
+
+        # Add hyperlinks to Apenas_Numista sheet
+        if len(nao_match_numista) > 0:
+            wb = load_workbook(nome_ficheiro2)
+            if "Apenas_Numista" in wb.sheetnames:
+                ws = wb["Apenas_Numista"]
+                # Find link_numista column (should be column F - the 6th column)
+                for row in range(2, ws.max_row + 1):
+                    cell = ws.cell(row=row, column=6)  # Column F
+                    if cell.value and str(cell.value).startswith("http"):
+                        url = str(cell.value)
+                        cell.hyperlink = url
+                        cell.style = "Hyperlink"
+                wb.save(nome_ficheiro2)
+
         print(f"💾 Moedas não correspondidas guardadas em: {nome_ficheiro2}")
 
 
